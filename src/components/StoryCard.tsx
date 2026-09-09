@@ -1,89 +1,80 @@
 import { Link } from "@tanstack/react-router";
 import { covers, type Story } from "@/data/content";
-import { useSaved } from "@/lib/library";
-import { usePlayer } from "@/lib/player";
+import { useWishlist } from "@/lib/library";
+import { Star } from "lucide-react";
+
+function displayAuthor(author?: string) {
+  if (!author) return undefined;
+  if (/^[a-f0-9]{24}$/i.test(author)) return undefined;
+  return author;
+}
 
 export function StoryCard({ story }: { story: Story }) {
-  const { isSaved, toggle } = useSaved();
-  const { play, track, playing, toggle: togglePlayer } = usePlayer();
+  const { saved, save, isUpdating } = useWishlist(story.apiId);
   const cover = story.coverImage || (story.cover ? covers[story.cover] : null);
-  const isCurrentPlaying = playing && track?.id === story.slug;
+  const author = displayAuthor(story.author);
 
   return (
-    <article className="card-leaf group flex flex-col overflow-hidden">
-      <Link
-        to="/kathayein/$slug"
-        params={{ slug: story.slug }}
-        className="block aspect-[4/3] overflow-hidden bg-accent relative"
-      >
-        {cover ? (
-          <img
-            src={cover}
-            alt={story.title}
-            loading="lazy"
-            width={1024}
-            height={768}
-            className="size-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <span className="jali flex size-full items-center justify-center bg-accent bg-blend-soft-light">
-            <span className="rounded-full bg-card px-4 py-2 font-display text-lg">
-              {story.title}
+    <article className="card-leaf group relative flex h-full flex-col overflow-hidden">
+      <div className="relative aspect-[16/10] overflow-hidden bg-accent">
+        <Link
+          to="/kathayein/$slug"
+          params={{ slug: story.slug }}
+          className="block size-full overflow-hidden"
+        >
+          {cover ? (
+            <img
+              src={cover}
+              alt={story.title}
+              loading="lazy"
+              width={1024}
+              height={768}
+              className="size-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+            />
+          ) : (
+            <span className="jali flex size-full items-center justify-center bg-accent bg-blend-soft-light">
+              <span className="rounded-full bg-card px-4 py-2 font-display text-lg">{story.title}</span>
             </span>
-          </span>
-        )}
+          )}
+        </Link>
+
         {typeof story.views === "number" && (
-          <span className="absolute bottom-2.5 right-2.5 rounded-full bg-background/80 px-2 py-0.5 text-[10px] text-foreground backdrop-blur-sm shadow-xs font-mono">
+          <span className="pointer-events-none absolute bottom-2.5 right-2.5 rounded-full bg-background/80 px-2 py-0.5 font-mono text-[10px] text-foreground shadow-xs backdrop-blur-sm">
             👁 {story.views}
           </span>
         )}
-      </Link>
-      <div className="flex flex-1 flex-col p-5">
-        <div className="flex items-center justify-between gap-2">
+
+        <button
+          type="button"
+          aria-label={saved ? "सहेजी गई सूची" : "सहेजें"}
+          disabled={isUpdating}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void save(story.slug);
+          }}
+          className="absolute top-2.5 right-2.5 z-10 flex size-9 cursor-pointer items-center justify-center rounded-full bg-background/85 text-foreground shadow-md backdrop-blur-md transition-all hover:scale-110 hover:bg-background active:scale-90"
+          title={saved ? "सहेजी गई" : "सहेजें"}
+        >
+          <Star
+            className={`size-5 transition-colors ${
+              saved ? "fill-vermilion text-vermilion" : "text-ink-soft hover:text-vermilion"
+            }`}
+          />
+        </button>
+      </div>
+
+      <div className="flex flex-1 flex-col px-5 py-4 sm:px-6 sm:py-5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="eyebrow text-vermilion">{story.category}</span>
-          {story.author && <span className="text-[11px] text-ink-soft">लेखक: {story.author}</span>}
+          {author ? (
+            <span className="max-w-[14rem] truncate text-xs text-ink-soft">लेखक: {author}</span>
+          ) : null}
         </div>
-        <Link to="/kathayein/$slug" params={{ slug: story.slug }} className="mt-1">
-          <h3 className="font-display text-2xl leading-snug">{story.title}</h3>
+        <Link to="/kathayein/$slug" params={{ slug: story.slug }} className="mt-2.5">
+          <h3 className="font-display text-xl leading-snug sm:text-[1.35rem]">{story.title}</h3>
         </Link>
-        <p className="mt-2 flex-1 text-sm text-ink-soft line-clamp-3">{story.summary}</p>
-        <div className="mt-4 flex items-center justify-between text-xs text-ink-soft">
-          <span>{story.minutes} मिनट पठन</span>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (isCurrentPlaying) {
-                  togglePlayer();
-                } else {
-                  play({
-                    id: story.slug,
-                    title: story.title,
-                    duration: story.audio,
-                    subtitle: story.category,
-                    text: `${story.title}. ${story.summary}`,
-                  });
-                }
-              }}
-              className="text-gold transition-colors hover:text-vermilion cursor-pointer font-medium"
-            >
-              {isCurrentPlaying ? "❙❙ रोकें" : `▶ ${story.audio}`}
-            </button>
-            <button
-              aria-label="सहेजें"
-              onClick={() => toggle(story.slug)}
-              className={
-                isSaved(story.slug)
-                  ? "text-vermilion"
-                  : "text-ink-soft transition-colors hover:text-vermilion"
-              }
-            >
-              {isSaved(story.slug) ? "★" : "☆"}
-            </button>
-          </div>
-        </div>
+        <p className="mt-2.5 line-clamp-3 text-sm leading-relaxed text-ink-soft">{story.summary}</p>
       </div>
     </article>
   );

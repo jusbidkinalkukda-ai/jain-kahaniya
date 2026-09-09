@@ -22,11 +22,13 @@ export type Chapter = {
 
 export type Story = {
   slug: string;
+  apiId?: string | undefined;
   title: string;
   latin: string;
   category: string;
   cover: CoverKey | null;
   coverImage?: string | undefined;
+  categoryId?: string | undefined;
   views?: number | undefined;
   author?: string | undefined;
   tags?: string[] | undefined;

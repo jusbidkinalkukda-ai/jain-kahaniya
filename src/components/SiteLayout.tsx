@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { User, LogIn, LogOut, Bookmark } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const nav = [
   { to: "/kathayein", label: "कथाएँ" },
@@ -178,18 +179,20 @@ export function PageHead({
   title,
   latin,
   intro,
+  className,
 }: {
   eyebrow: string;
   title: string;
   latin?: string;
   intro?: string;
+  className?: string;
 }) {
   return (
-    <div className="mx-auto max-w-6xl px-5 pt-12">
+    <div className={cn("mx-auto max-w-6xl px-5 pt-10 sm:pt-12", className)}>
       <p className="eyebrow">{eyebrow}</p>
-      <h1 className="mt-2 text-4xl leading-tight sm:text-5xl">{title}</h1>
-      {latin ? <p className="mt-1 font-mono text-xs text-ink-soft">{latin}</p> : null}
-      {intro ? <p className="mt-4 max-w-2xl text-ink-soft">{intro}</p> : null}
+      <h1 className="mt-2 text-4xl leading-[1.15] sm:text-5xl">{title}</h1>
+      {latin ? <p className="mt-1.5 font-mono text-xs text-ink-soft">{latin}</p> : null}
+      {intro ? <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-ink-soft">{intro}</p> : null}
     </div>
   );
 }

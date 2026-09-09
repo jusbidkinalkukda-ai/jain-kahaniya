@@ -139,11 +139,16 @@ export function apiBlogToStory(blog: ApiBlog): Story {
       ? rawCoverUrl.replace(/\.pdf(\?.*)?$/i, ".jpg$1")
       : rawCoverUrl;
 
+  const categoryId =
+    typeof blog.category === "object" && blog.category?._id ? blog.category._id : undefined;
+
   return {
     slug: blog.slug,
+    apiId: blog._id,
     title: blog.title,
     latin: blog.slug.replace(/-/g, " "),
     category: categoryName,
+    categoryId,
     cover: null,
     coverImage: coverUrl || undefined,
     views: typeof blog.views === "number" ? blog.views : undefined,

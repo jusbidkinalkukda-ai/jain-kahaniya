@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import heroImg from "@/assets/hero.jpg";
 import { StoryCard } from "@/components/StoryCard";
-import { concepts, stories, storyBySlug, tirthankars } from "@/data/content";
+import { concepts, storyBySlug, tirthankars } from "@/data/content";
+import { apiBlogToStory, blogService } from "@/lib/blog-service";
 import { useProgress } from "@/lib/library";
 import { usePlayer } from "@/lib/player";
 
@@ -29,8 +31,19 @@ function Home() {
   const { play } = usePlayer();
   const current = progress[0];
   const currentStory = current ? storyBySlug(current.slug) : undefined;
-  const featured = stories.slice(0, 3);
   const navTatva = concepts.find((c) => c.slug === "nav-tatva");
+
+  const {
+    data: featuredBlogs,
+    isLoading: featuredLoading,
+    isError: featuredError,
+  } = useQuery({
+    queryKey: ["public-blogs", "home-featured"],
+    queryFn: () => blogService.getBlogs({ page: 1, limit: 3 }),
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const featured = (featuredBlogs?.data ?? []).map(apiBlogToStory);
 
   return (
     <div className="mx-auto max-w-6xl px-5">
@@ -127,9 +140,19 @@ function Home() {
           </Link>
         </div>
         <div className="mt-6 grid gap-6 md:grid-cols-3">
-          {featured.map((s) => (
-            <StoryCard key={s.slug} story={s} />
-          ))}
+          {featuredLoading ? (
+            [0, 1, 2].map((i) => (
+              <div key={i} className="card-leaf h-80 animate-pulse bg-muted/50" />
+            ))
+          ) : featuredError ? (
+            <p className="card-leaf p-6 text-ink-soft md:col-span-3">
+              कथाएँ लोड नहीं हो सकीं। कृपया बाद में प्रयास करें।
+            </p>
+          ) : featured.length ? (
+            featured.map((s) => <StoryCard key={s.apiId || s.slug} story={s} />)
+          ) : (
+            <p className="card-leaf p-6 text-ink-soft md:col-span-3">अभी कोई कथा उपलब्ध नहीं है।</p>
+          )}
         </div>
       </section>
 

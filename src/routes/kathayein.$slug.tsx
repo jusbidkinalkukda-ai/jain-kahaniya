@@ -1,8 +1,9 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { covers, storyBySlug, stories } from "@/data/content";
+import { useQuery } from "@tanstack/react-query";
+import { covers, storyBySlug } from "@/data/content";
 import { blogService, apiBlogToStory } from "@/lib/blog-service";
-import { useProgress, useRecent, useSaved } from "@/lib/library";
+import { useProgress, useRecent, useWishlist } from "@/lib/library";
 import { usePlayer } from "@/lib/player";
 import { ChapterDocumentViewer } from "@/components/ChapterDocumentViewer";
 import { Eye, User, Tag } from "lucide-react";
@@ -61,7 +62,7 @@ export const Route = createFileRoute("/kathayein/$slug")({
 
 function StoryPage() {
   const { story } = Route.useLoaderData();
-  const { isSaved, toggle } = useSaved();
+  const { saved, save, isUpdating } = useWishlist(story.apiId);
   const { record, forSlug } = useProgress();
   const { visit } = useRecent();
   const { play, track, playing, toggle: togglePlayer } = usePlayer();
@@ -82,10 +83,37 @@ function StoryPage() {
 
   const active = story.chapters[chapter] || story.chapters[0];
 
-  const relatedStories =
-    story.related.length > 0
-      ? story.related.map(storyBySlug).filter((s): s is NonNullable<typeof s> => !!s)
-      : stories.filter((s) => s.slug !== story.slug).slice(0, 3);
+  const { data: relatedStories = [], isLoading: relatedLoading } = useQuery({
+    queryKey: ["related-blogs", story.slug, story.categoryId],
+    queryFn: async () => {
+      const pickRelated = (blogs: ReturnType<typeof apiBlogToStory>[]) => {
+        const sameCategory = blogs.filter((item) => item.category === story.category);
+        const others = blogs.filter((item) => item.category !== story.category);
+        return [...sameCategory, ...others].slice(0, 3);
+      };
+
+      const res = await blogService.getBlogs({
+        page: 1,
+        limit: 12,
+        category: story.categoryId,
+      });
+      let mapped = (res.data ?? [])
+        .filter((blog) => blog.slug !== story.slug)
+        .map(apiBlogToStory);
+
+      if (mapped.length < 3) {
+        const more = await blogService.getBlogs({ page: 1, limit: 12 });
+        const extra = (more.data ?? [])
+          .filter((blog) => blog.slug !== story.slug)
+          .map(apiBlogToStory);
+        const seen = new Set(mapped.map((item) => item.slug));
+        mapped = [...mapped, ...extra.filter((item) => !seen.has(item.slug))];
+      }
+
+      return pickRelated(mapped);
+    },
+    staleTime: 1000 * 60 * 2,
+  });
 
   return (
     <article className="mx-auto max-w-6xl px-5 pt-12">
@@ -124,9 +152,9 @@ function StoryPage() {
       )}
 
       <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
-        <span className="rounded-full bg-muted px-3 py-1.5 text-ink-soft">
+        {/* <span className="rounded-full bg-muted px-3 py-1.5 text-ink-soft">
           {story.minutes} मिनट पठन
-        </span>
+        </span> */}
         <button
           type="button"
           onClick={(e) => {
@@ -164,10 +192,12 @@ function StoryPage() {
           )}
         </button>
         <button
-          onClick={() => toggle(story.slug)}
+          type="button"
+          disabled={isUpdating}
+          onClick={() => void save(story.slug)}
           className="rounded-full border border-input bg-card px-4 py-2"
         >
-          {isSaved(story.slug) ? "★ सहेजी गई" : "☆ सहेजें"}
+          {saved ? "★ सहेजी गई" : "☆ सहेजें"}
         </button>
         <button
           onClick={() => {
@@ -265,25 +295,43 @@ function StoryPage() {
       </div>
 
       {/* Related Stories */}
-      {relatedStories.length > 0 && (
-        <section className="mt-16">
-          <h2 className="text-2xl">संबंधित कथाएँ</h2>
+      <section className="mt-16">
+        <h2 className="text-2xl">संबंधित कथाएँ</h2>
+        {relatedLoading ? (
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="card-leaf h-40 animate-pulse bg-muted/50" />
+            ))}
+          </div>
+        ) : relatedStories.length ? (
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             {relatedStories.map((r) => (
               <Link
-                key={r.slug}
+                key={r.apiId || r.slug}
                 to="/kathayein/$slug"
                 params={{ slug: r.slug }}
-                className="card-leaf p-5 transition-transform hover:-translate-y-1"
+                className="card-leaf overflow-hidden p-0 transition-transform hover:-translate-y-1"
               >
-                <span className="eyebrow text-vermilion">{r.category}</span>
-                <h3 className="mt-1 font-display text-xl">{r.title}</h3>
-                <p className="mt-2 text-sm text-ink-soft">{r.minutes} मिनट</p>
+                {r.coverImage ? (
+                  <img
+                    src={r.coverImage}
+                    alt={r.title}
+                    loading="lazy"
+                    className="h-36 w-full object-cover"
+                  />
+                ) : null}
+                <div className="p-5">
+                  <span className="eyebrow text-vermilion">{r.category}</span>
+                  <h3 className="mt-1 font-display text-xl">{r.title}</h3>
+                  <p className="mt-2 line-clamp-2 text-sm text-ink-soft">{r.summary}</p>
+                </div>
               </Link>
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <p className="card-leaf mt-4 p-6 text-ink-soft">अन्य कथाएँ उपलब्ध नहीं हैं।</p>
+        )}
+      </section>
     </article>
   );
 }

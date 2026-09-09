@@ -19,8 +19,14 @@ apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== "undefined") {
       const token = localStorage.getItem(TOKEN_STORAGE_KEY);
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
+      if (token) {
+        const headerValue = `Bearer ${token}`;
+        if (config.headers && typeof config.headers.set === "function") {
+          config.headers.set("Authorization", headerValue);
+        } else {
+          config.headers = config.headers ?? {};
+          config.headers.Authorization = headerValue;
+        }
       }
     }
     return config;

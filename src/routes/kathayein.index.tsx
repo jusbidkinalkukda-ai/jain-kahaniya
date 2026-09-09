@@ -120,7 +120,8 @@ function StoriesPage() {
           <div className="flex flex-wrap items-center gap-2">
             {categoryOptions.map((c) => (
               <button
-                key={c.label}
+                key={c.id ?? c.label}
+                type="button"
                 onClick={() => handleCategorySelect(c)}
                 className={
                   c.label === activeCategory
@@ -152,16 +153,13 @@ function StoriesPage() {
         {/* Status Indicator */}
         <div className="mt-4 flex items-center justify-between text-xs text-ink-soft">
           <div className="flex items-center gap-2">
-            <BookOpen className="h-3.5 w-3.5" />
-            <span>
-              {isLoading ? (
-                "कथाएँ लोड हो रही हैं..."
-              ) : (
-                <>
-                  कुल <strong>{pagination?.total ?? displayedStories.length}</strong> कथाएँ
-                  {isApiSource && " (लाइव डेटाबेस से)"}
-                </>
-              )}
+            <BookOpen className="h-3.5 w-3.5 shrink-0" />
+            <span key={isLoading ? "loading" : "count"}>
+              {isLoading
+                ? "कथाएँ लोड हो रही हैं..."
+                : `कुल ${pagination?.total ?? displayedStories.length} कथाएँ${
+                    isApiSource ? " (लाइव डेटाबेस से)" : ""
+                  }`}
             </span>
           </div>
 
@@ -196,7 +194,7 @@ function StoriesPage() {
         {!isLoading && displayedStories.length > 0 && (
           <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {displayedStories.map((s) => (
-              <StoryCard key={s.slug} story={s} />
+              <StoryCard key={s.apiId || s.slug} story={s} />
             ))}
           </div>
         )}
