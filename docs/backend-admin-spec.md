@@ -707,7 +707,7 @@ PUT    /api/v1/admin/stories/:storyId/reorder-chapters
   "coverMediaId": "media_cover_01",
   "readingMinutes": 18,
   "featured": true,
-  "seoTitle": "भगवान महावीर चरित्र | जैन कहानियां",
+  "seoTitle": "भगवान महावीर चरित्र | जैन कहानियाँ",
   "seoDescription": "भगवान महावीर के जीवन और संदेश की कथा।"
 }
 ```

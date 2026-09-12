@@ -34,7 +34,7 @@ export const Route = createFileRoute("/kathayein/$slug")({
     const { story } = loaderData;
     return {
       meta: [
-        { title: `${story.title} — जैन कहानियां वाचनालय` },
+        { title: `${story.title} — जैन कहानियाँ वाचनालय` },
         { name: "description", content: story.summary },
         { property: "og:title", content: story.title },
         { property: "og:description", content: story.summary },

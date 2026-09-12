@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { PageHead } from "@/components/SiteLayout";
 import { StoryCard } from "@/components/StoryCard";
 import { stories, type Story } from "@/data/content";
@@ -10,14 +10,14 @@ import { Search, Loader2, RefreshCw, BookOpen, AlertCircle } from "lucide-react"
 export const Route = createFileRoute("/kathayein/")({
   head: () => ({
     meta: [
-      { title: "जैन कहानियां — वाचनालय" },
+      { title: "जैन कहानियाँ — वाचनालय" },
       {
         name: "description",
         content:
-          "भगवान महावीर, पार्श्वनाथ, ऋषभदेव, चंदनबाला, शालिभद्र और अन्य जैन कहानियां पढ़ें और सुनें।",
+          "भगवान महावीर, पार्श्वनाथ, ऋषभदेव, चंदनबाला, शालिभद्र और अन्य जैन कहानियाँ पढ़ें और सुनें।",
       },
-      { property: "og:title", content: "जैन कहानियां" },
-      { property: "og:description", content: "चुनी हुई जैन कहानियां — पठन और श्रवण के साथ।" },
+      { property: "og:title", content: "जैन कहानियाँ" },
+      { property: "og:description", content: "चुनी हुई जैन कहानियाँ — पठन और श्रवण के साथ।" },
     ],
   }),
   component: StoriesPage,
@@ -27,7 +27,7 @@ function StoriesPage() {
   const [activeCategory, setActiveCategory] = useState<string>("सभी");
   const [activeCategoryId, setActiveCategoryId] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Fetch categories from API
   const { data: categories = [] } = useQuery({
@@ -40,20 +40,50 @@ function StoriesPage() {
   const {
     data: blogData,
     isLoading,
+    isFetchingNextPage,
     isError,
     error,
     refetch,
-  } = useQuery({
-    queryKey: ["public-blogs", activeCategoryId, currentPage, searchQuery],
-    queryFn: () =>
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["public-blogs", activeCategoryId, searchQuery],
+    queryFn: ({ pageParam }) =>
       blogService.getBlogs({
         category: activeCategoryId,
-        page: currentPage,
+        page: pageParam,
         limit: 12,
         search: searchQuery.trim() || undefined,
       }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage.pagination;
+      if (pagination) {
+        return pagination.page * pagination.limit < pagination.total
+          ? pagination.page + 1
+          : undefined;
+      }
+      return lastPage.data.length === 12 ? 2 : undefined;
+    },
     staleTime: 1000 * 60 * 2,
   });
+
+  useEffect(() => {
+    const loadMoreElement = loadMoreRef.current;
+    if (!loadMoreElement || !hasNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "240px" },
+    );
+
+    observer.observe(loadMoreElement);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   // Category pill list
   const categoryOptions = useMemo(() => {
@@ -76,8 +106,9 @@ function StoriesPage() {
 
   // Combine API stories with local stories fallback
   const displayedStories: Story[] = useMemo(() => {
-    if (blogData?.data && blogData.data.length > 0) {
-      return blogData.data.map(apiBlogToStory);
+    const apiStories = blogData?.pages.flatMap((page) => page.data) ?? [];
+    if (apiStories.length > 0) {
+      return apiStories.map(apiBlogToStory);
     }
     // Fallback to local content when API is unavailable or returns 0
     if (activeCategory === "सभी") {
@@ -95,20 +126,19 @@ function StoriesPage() {
     return stories.filter((s) => s.category === activeCategory);
   }, [blogData, activeCategory, searchQuery]);
 
-  const pagination = blogData?.pagination;
-  const isApiSource = !!(blogData?.data && blogData.data.length > 0);
+  const pagination = blogData?.pages[0]?.pagination;
+  const isApiSource = (blogData?.pages.flatMap((page) => page.data).length ?? 0) > 0;
 
   const handleCategorySelect = (item: { label: string; id: string | undefined }) => {
     setActiveCategory(item.label);
     setActiveCategoryId(item.id);
-    setCurrentPage(1);
   };
 
   return (
     <>
       <PageHead
         eyebrow="कथा संग्रह"
-        title="जैन कहानियां"
+        title="जैन कहानियाँ"
         latin="Jain Kathayein"
         intro="तीर्थंकरों, श्रावकों और साधकों की पावन कथाएँ — प्रत्येक अध्यायों में विभाजित, चित्र एवं ऑडियो के साथ।"
       />
@@ -142,7 +172,6 @@ function StoriesPage() {
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                setCurrentPage(1);
               }}
               placeholder="कथा खोजें..."
               className="w-full rounded-full border border-input bg-card pl-9 pr-4 py-2 text-xs sm:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -210,7 +239,6 @@ function StoriesPage() {
                 setActiveCategory("सभी");
                 setActiveCategoryId(undefined);
                 setSearchQuery("");
-                setCurrentPage(1);
               }}
               className="mt-4 rounded-full bg-primary px-4 py-2 text-xs text-primary-foreground"
             >
@@ -219,26 +247,15 @@ function StoriesPage() {
           </div>
         )}
 
-        {/* Pagination Controls */}
-        {pagination && pagination.total > pagination.limit && (
-          <div className="mt-12 flex items-center justify-center gap-3 pb-8">
-            <button
-              disabled={currentPage <= 1 || isLoading}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="rounded-full border border-input bg-card px-4 py-2 text-sm text-ink-soft hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              ← पिछला पृष्ठ
-            </button>
-            <span className="text-xs sm:text-sm font-mono text-ink-soft">
-              पृष्ठ {currentPage} / {Math.ceil(pagination.total / pagination.limit)}
-            </span>
-            <button
-              disabled={currentPage >= Math.ceil(pagination.total / pagination.limit) || isLoading}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className="rounded-full border border-input bg-card px-4 py-2 text-sm text-ink-soft hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              अगला पृष्ठ →
-            </button>
+        {/* Infinite scroll sentinel */}
+        {!isLoading && displayedStories.length > 0 && (hasNextPage || isFetchingNextPage) && (
+          <div ref={loadMoreRef} className="flex min-h-20 items-center justify-center pb-8">
+            {isFetchingNextPage && (
+              <div className="flex items-center gap-2 text-sm text-ink-soft" aria-live="polite">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                और कथाएँ लोड हो रही हैं...
+              </div>
+            )}
           </div>
         )}
       </div>

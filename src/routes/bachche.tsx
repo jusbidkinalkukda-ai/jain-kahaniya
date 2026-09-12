@@ -11,7 +11,7 @@ export const Route = createFileRoute("/bachche")({
       {
         name: "description",
         content:
-          "बच्चों के लिए सरल जैन कहानियां, चित्र कथाएँ, कॉमिक, ऑडियो और मज़ेदार प्रश्नोत्तरी।",
+          "बच्चों के लिए सरल जैन कहानियाँ, चित्र कथाएँ, कॉमिक, ऑडियो और मज़ेदार प्रश्नोत्तरी।",
       },
       { property: "og:title", content: "बच्चों की जैन दुनिया" },
       { property: "og:description", content: "सरल कथाएँ, चित्र और खेल — बच्चों के लिए।" },

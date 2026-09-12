@@ -24,10 +24,10 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "लॉग इन / पंजीकरण — जैन कहानियां वाचनालय" },
+      { title: "लॉग इन / पंजीकरण — जैन कहानियाँ वाचनालय" },
       {
         name: "description",
-        content: "जैन कहानियां वाचनालय में लॉग इन करें या नया खाता बनाएँ।",
+        content: "जैन कहानियाँ वाचनालय में लॉग इन करें या नया खाता बनाएँ।",
       },
     ],
   }),

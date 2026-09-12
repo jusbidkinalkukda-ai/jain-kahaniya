@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FileText,
   ExternalLink,
@@ -7,8 +7,6 @@ import {
   Download,
   Loader2,
   AlertCircle,
-  Maximize2,
-  Minimize2,
 } from "lucide-react";
 
 interface ChapterDocumentViewerProps {
@@ -30,17 +28,42 @@ export function ChapterDocumentViewer({ url, title, chapterNo }: ChapterDocument
   const [hasError, setHasError] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [page, setPage] = useState(1);
-  const [hasMorePages, setHasMorePages] = useState(true);
+  // Highest page number we have actually RENDERED successfully.
+  // Once >= 2, we permanently know this is a multi-page document.
+  const [maxPageVisited, setMaxPageVisited] = useState(1);
+  // Tracks whether the next page exists:
+  //   null  = not yet checked (preload in-flight)
+  //   true  = next page confirmed by background preload
+  //   false = next page confirmed missing (navigation error or preload 404)
+  const [nextPageExists, setNextPageExists] = useState<boolean | null>(null);
+  // The highest page we have successfully NAVIGATED to (not just preloaded)
+  const [confirmedLastPage, setConfirmedLastPage] = useState<number | null>(null);
+  const preloadRef = useRef<HTMLImageElement | null>(null);
 
   // For multi-page Cloudinary PDFs
   const getPageUrl = (pageNum: number) => {
     if (!isCloudinary || !isPdf) return resolvedPdfImageUrl;
-    // Inject pg_N transformation
     if (pageNum === 1) return resolvedPdfImageUrl;
     return url
       .replace(/\/upload\/(v\d+\/)?/, `/upload/pg_${pageNum},q_auto,f_auto/$1`)
       .replace(/\.pdf(\?.*)?$/i, ".jpg$1");
   };
+
+  // Eagerly preload the NEXT page whenever current page changes.
+  // Only sets nextPageExists — never hides the pagination bar.
+  useEffect(() => {
+    if (!isPdf || !isCloudinary) return;
+    // Reset while in-flight
+    setNextPageExists(null);
+    const nextUrl = getPageUrl(page + 1);
+    const img = new Image();
+    img.src = nextUrl;
+    preloadRef.current = img;
+    img.onload = () => setNextPageExists(true);
+    img.onerror = () => setNextPageExists(false);
+    return () => { img.src = ""; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   // Sanitized title for attachment filename
   const cleanTitle = (title || "document").replace(/[^a-zA-Z0-9_\-]/g, "_");
@@ -59,7 +82,9 @@ export function ChapterDocumentViewer({ url, title, chapterNo }: ChapterDocument
   const handleImageError = () => {
     setIsLoading(false);
     if (page > 1) {
-      setHasMorePages(false);
+      // Navigated to a page that doesn't exist — step back
+      setConfirmedLastPage(page - 1);
+      setNextPageExists(false);
       setPage((p) => p - 1);
     } else {
       setHasError(true);
@@ -69,7 +94,33 @@ export function ChapterDocumentViewer({ url, title, chapterNo }: ChapterDocument
   const handleImageLoad = () => {
     setIsLoading(false);
     setHasError(false);
+    setMaxPageVisited((prev) => Math.max(prev, page));
   };
+
+  // Next page is disabled only when:
+  //  - preload confirmed no next page AND we've never visited beyond current page
+  //  - OR navigation error confirmed the last page
+  const isLastPage =
+    (nextPageExists === false && maxPageVisited <= page) ||
+    (confirmedLastPage !== null && page >= confirmedLastPage);
+
+  const goToPrevPage = () => {
+    if (page <= 1 || isLoading) return;
+    setPage((p) => Math.max(1, p - 1));
+    setIsLoading(true);
+  };
+
+  const goToNextPage = () => {
+    if (isLastPage || isLoading) return;
+    setPage((p) => p + 1);
+    setIsLoading(true);
+  };
+
+  // Always show pagination for Cloudinary PDFs (no fatal error).
+  // Hide ONLY when confirmed single-page: preload failed, still on page 1,
+  // and we have NEVER successfully rendered any page beyond page 1.
+  const showPagination = isPdf && isCloudinary && !hasError &&
+    !(nextPageExists === false && page === 1 && maxPageVisited === 1 && confirmedLastPage === null);
 
   return (
     <div className="my-6 overflow-hidden rounded-2xl border border-border bg-card shadow-md transition-all">
@@ -182,9 +233,11 @@ export function ChapterDocumentViewer({ url, title, chapterNo }: ChapterDocument
             }`}
           >
             <img
+              key={currentDisplayUrl}
               src={currentDisplayUrl}
               alt={title}
-              loading="lazy"
+              loading="eager"
+              decoding="async"
               onLoad={handleImageLoad}
               onError={handleImageError}
               className={`rounded-xl object-contain mx-auto transition-all ${
@@ -197,31 +250,27 @@ export function ChapterDocumentViewer({ url, title, chapterNo }: ChapterDocument
         )}
       </div>
 
-      {/* Multi-page controls if applicable */}
-      {isPdf && isCloudinary && (page > 1 || hasMorePages) && !hasError && (
+      {/* Multi-page pagination controls */}
+      {showPagination && (
         <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 px-4 py-2 text-xs text-ink-soft">
           <button
             type="button"
             disabled={page <= 1 || isLoading}
-            onClick={() => {
-              setPage((p) => Math.max(1, p - 1));
-              setIsLoading(true);
-            }}
-            className="hover:text-foreground disabled:opacity-40"
+            onClick={goToPrevPage}
+            className="hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
           >
             ← पिछला पृष्ठ
           </button>
 
-          <span className="font-mono">पृष्ठ {page}</span>
+          <span className="font-mono">
+            पृष्ठ {page}{confirmedLastPage ? ` / ${confirmedLastPage}` : ""}
+          </span>
 
           <button
             type="button"
-            disabled={!hasMorePages || isLoading}
-            onClick={() => {
-              setPage((p) => p + 1);
-              setIsLoading(true);
-            }}
-            className="text-vermilion hover:underline disabled:opacity-40"
+            disabled={isLastPage || isLoading}
+            onClick={goToNextPage}
+            className="text-vermilion hover:underline disabled:opacity-40 disabled:cursor-not-allowed disabled:no-underline"
           >
             अगला पृष्ठ →
           </button>

@@ -7,7 +7,7 @@ import { usePlayer } from "@/lib/player";
 export const Route = createFileRoute("/tirthankar/")({
   head: () => ({
     meta: [
-      { title: "चौबीस तीर्थंकर — जैन कहानियां वाचनालय" },
+      { title: "चौबीस तीर्थंकर — जैन कहानियाँ वाचनालय" },
       {
         name: "description",
         content:

@@ -10,7 +10,7 @@ export const Route = createFileRoute("/shravan")({
       { title: "श्रवण — जैन ऑडियो कथाएँ" },
       {
         name: "description",
-        content: "जैन कहानियां और तीर्थंकर परिचय सुनें — चलते-फिरते श्रवण के लिए ऑडियो संग्रह।",
+        content: "जैन कहानियाँ और तीर्थंकर परिचय सुनें — चलते-फिरते श्रवण के लिए ऑडियो संग्रह।",
       },
       { property: "og:title", content: "श्रवण — जैन ऑडियो कथाएँ" },
       { property: "og:description", content: "पढ़ने का समय न हो तो सुनें।" },

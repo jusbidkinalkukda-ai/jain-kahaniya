@@ -214,7 +214,7 @@ export function AuthModal() {
               {activeTab === "login"
                 ? "अपनी सहेजी कथाएँ, श्रवण और संग्रह देखने के लिए लॉग इन करें।"
                 : signupStep === "details"
-                  ? "जैन कहानियां वाचनालय का सदस्य बनने के लिए पंजीकरण करें।"
+                  ? "जैन कहानियाँ वाचनालय का सदस्य बनने के लिए पंजीकरण करें।"
                   : `कोड ${signupEmail} पर भेजा गया है।`}
             </DialogDescription>
           </DialogHeader>

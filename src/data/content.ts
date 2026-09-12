@@ -816,7 +816,7 @@ export const books: Book[] = [
     pages: 320,
   },
   {
-    title: "बालकों की जैन कहानियां",
+    title: "बालकों की जैन कहानियाँ",
     sub: "चित्रों के साथ",
     author: "शांता जैन",
     language: "हिन्दी",

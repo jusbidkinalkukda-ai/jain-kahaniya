@@ -76,11 +76,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "जैन कहानियां वाचनालय — Jain Kahaniyan Vachanalaya" },
+      { title: "जैन कहानियाँ वाचनालय — Jain Kahaniyan Vachanalaya" },
       {
         name: "description",
         content:
-          "जैन कहानियां पढ़ें और सुनें, चौबीस तीर्थंकर जानें, जैन दर्शन समझें और प्रश्नोत्तरी खेलें।",
+          "जैन कहानियाँ पढ़ें और सुनें, चौबीस तीर्थंकर जानें, जैन दर्शन समझें और प्रश्नोत्तरी खेलें।",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

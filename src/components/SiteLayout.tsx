@@ -11,7 +11,6 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { User, LogIn, LogOut, Bookmark } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const nav = [
   { to: "/kathayein", label: "कथाएँ" },
@@ -39,7 +38,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             {/* Brand Logo */}
             <Link to="/" className="flex items-baseline gap-2 shrink-0">
               <span className="font-display text-xl leading-none whitespace-nowrap">
-                जैन कहानियां
+                जैन कहानियाँ
               </span>
               <span className="eyebrow hidden sm:inline">Vachanalaya</span>
             </Link>
@@ -103,13 +102,18 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                       {user.name ? user.name[0]?.toUpperCase() : user.email[0]?.toUpperCase()}
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 bg-card border-border shadow-xl">
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="font-display text-sm font-medium leading-none text-foreground">
-                          {user.name || "प्रिय पाठक"}
-                        </p>
-                        <p className="text-xs leading-none text-ink-soft truncate">{user.email}</p>
+                  <DropdownMenuContent align="end" className="w-64 bg-card border-border p-1.5 shadow-xl">
+                    <DropdownMenuLabel className="px-3 py-3 font-normal">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent font-display text-sm font-semibold text-foreground">
+                          {user.name ? user.name[0]?.toUpperCase() : user.email[0]?.toUpperCase()}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-display text-sm font-medium leading-tight text-foreground">
+                            {user.name || "प्रिय पाठक"}
+                          </p>
+                          <p className="mt-1 break-all text-xs leading-tight text-ink-soft">{user.email}</p>
+                        </div>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator className="bg-border" />
@@ -166,7 +170,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <footer className="mx-auto mt-20 max-w-6xl px-5">
         <div className="jali h-px w-full opacity-40" />
         <div className="flex flex-wrap items-center justify-between gap-4 py-8 text-sm text-ink-soft">
-          <p className="font-display text-base text-foreground">जैन कहानियां वाचनालय</p>
+          <p className="font-display text-base text-foreground">जैन कहानियाँ वाचनालय</p>
           <p>पढ़ें · सुनें · समझें · स्मरण रखें</p>
         </div>
       </footer>
@@ -179,20 +183,18 @@ export function PageHead({
   title,
   latin,
   intro,
-  className,
 }: {
   eyebrow: string;
   title: string;
   latin?: string;
   intro?: string;
-  className?: string;
 }) {
   return (
-    <div className={cn("mx-auto max-w-6xl px-5 pt-10 sm:pt-12", className)}>
+    <div className="mx-auto max-w-6xl px-5 pt-12">
       <p className="eyebrow">{eyebrow}</p>
-      <h1 className="mt-2 text-4xl leading-[1.15] sm:text-5xl">{title}</h1>
-      {latin ? <p className="mt-1.5 font-mono text-xs text-ink-soft">{latin}</p> : null}
-      {intro ? <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-ink-soft">{intro}</p> : null}
+      <h1 className="mt-2 text-4xl leading-tight sm:text-5xl">{title}</h1>
+      {latin ? <p className="mt-1 font-mono text-xs text-ink-soft">{latin}</p> : null}
+      {intro ? <p className="mt-4 max-w-2xl text-ink-soft">{intro}</p> : null}
     </div>
   );
 }

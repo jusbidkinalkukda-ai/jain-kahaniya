@@ -10,13 +10,13 @@ import { usePlayer } from "@/lib/player";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "जैन कहानियां वाचनालय — पढ़ें, सुनें, समझें" },
+      { title: "जैन कहानियाँ वाचनालय — पढ़ें, सुनें, समझें" },
       {
         name: "description",
         content:
-          "जैन कहानियां, चौबीस तीर्थंकर, जैन दर्शन, ऑडियो कथाएँ, प्रश्नोत्तरी और पुस्तकालय — एक ही स्थान पर।",
+          "जैन कहानियाँ, चौबीस तीर्थंकर, जैन दर्शन, ऑडियो कथाएँ, प्रश्नोत्तरी और पुस्तकालय — एक ही स्थान पर।",
       },
-      { property: "og:title", content: "जैन कहानियां वाचनालय" },
+      { property: "og:title", content: "जैन कहानियाँ वाचनालय" },
       {
         property: "og:description",
         content: "जैन ज्ञान पढ़ें, सुनें और समझें — एक आधुनिक वाचनालय।",
@@ -52,7 +52,7 @@ function Home() {
         <div>
           <p className="eyebrow">पढ़ें · सुनें · समझें</p>
           <h1 className="mt-3 text-5xl leading-[1.1] sm:text-6xl">
-            जैन कहानियां
+            जैन कहानियाँ
             <br />
             <span className="text-vermilion">वाचनालय</span>
           </h1>
